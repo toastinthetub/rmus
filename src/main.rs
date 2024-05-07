@@ -1,14 +1,15 @@
 // hello seth
-use std::{env::args, fs::File, io::BufReader};
+use std::{env::args, fs::File, io::BufReader, path::Path};
 use rodio::{Decoder, OutputStream, source::Source};
 
 fn main() {
-    use rodio::{Decoder, OutputStream, source::Source};
+    let args: Vec<String> = args().collect();
+    let filepath = Path::new(&args[1]);
 
-// Get an output stream handle to the default physical sound device
+    // Get an output stream handle to the default physical sound device
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     // Load a sound from a file, using a path relative to Cargo.toml
-    let file = BufReader::new(File::open("/home/fizbin/lair/snatch/music/Pantera/cowboysfromhell/cowboysfromhell.m4a").unwrap());
+    let file = BufReader::new(File::open(filepath).unwrap());
     // Decode that sound file into a source
     let source = Decoder::new(file).unwrap();
     // Play the sound directly on the device
