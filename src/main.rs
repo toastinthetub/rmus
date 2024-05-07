@@ -4,6 +4,9 @@ use rodio::{Decoder, OutputStream, source::Source};
 
 fn main() {
     let args: Vec<String> = args().collect();
+
+    assert!(args.len() >= 2, "no file provided");
+
     let filepath = Path::new(&args[1]);
 
     // Get an output stream handle to the default physical sound device
@@ -12,10 +15,11 @@ fn main() {
     let file = BufReader::new(File::open(filepath).unwrap());
     // Decode that sound file into a source
     let source = Decoder::new(file).unwrap();
+    let duration = source.total_duration().unwrap();
     // Play the sound directly on the device
     stream_handle.play_raw(source.convert_samples()).unwrap();
 
     // The sound plays in a separate audio thread,
     // so we need to keep the main thread alive while it's playing.
-    std::thread::sleep(std::time::Duration::from_secs(246));
+    std::thread::sleep(duration);
 }
