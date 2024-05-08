@@ -1,35 +1,41 @@
 // hello seth
 mod tui;
 mod utils;
-mod render;
 
-use std::{env::args, fs::File, io::{self, BufReader, Write}, path::Path, thread, time::Duration};
-use crossterm::{cursor::MoveTo, QueueableCommand};
+use std::{env::args, fs::File, io::{self, BufReader}, path::Path, time::Duration};
 use rodio::{Decoder, OutputStream, source::Source};
-use tui::{initialize_terminal, kill_terminal};
-use render::render;
+use tui::{initialize_terminal, kill_terminal, render};
 
-use tokio::{runtime, task};
-
-use crate::tui::event_loop;
-
-#[tokio::main]
-async fn main() {
+fn main() {
     let args: Vec<String> = args().collect();
 
-    assert!(args.len() >= 2, "no file provided");
+    let filepath = Path::new(args.get(1).unwrap());
 
-    let filepath = Path::new(&args[1]);
+    let mut stdout = tui::initialize_terminal();
+    task::spawn(event_loop(stdout));
 
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    // decoding makes me want to kill myself
+    let src = File::open(filepath).unwrap();
+    let mss = MediaSourceStream::new(Box::new(src), Default::default());
+
+    let mut hint = Hint::new();
+    hint.with_extension(filepath.extension().unwrap().to_str().unwrap());
+
+    let meta_opts: MetadataOptions = Default::default();
+    let fmt_opts: FormatOptions = Default::default();
+
+    let probed = symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &meta_opts)
+        .unwrap();
 
     let file = BufReader::new(File::open(filepath).unwrap());
-    let mut stdout = initialize_terminal();
-
-    task::spawn(event_loop(stdout));
+    let stdout = tui::initialize_terminal();
+    tui::render(stdout);
+    std::thread::sleep(Duration::from_secs(2));
+    tui::kill_terminal();
 
     let source = Decoder::new(file).unwrap();
     let duration = source.total_duration().unwrap();
     stream_handle.play_raw(source.convert_samples()).unwrap();
+
     std::thread::sleep(duration);
 }

@@ -6,7 +6,7 @@ use crate::render;
 const RESOURCE: &str = include_str!("./Resource/resource.txt");
 
 pub async fn event_loop(mut stdout: Stdout) {
-    render(&mut stdout);
+    render::render(&mut stdout);
     let mut reader = EventStream::new();
     loop {
         let event = reader.next().await.unwrap().unwrap();
@@ -15,7 +15,7 @@ pub async fn event_loop(mut stdout: Stdout) {
                 render::render(&mut stdout)
             }
             Event::Key(event) => {
-                render(&mut stdout);
+                render::render(&mut stdout);
                 match event.code {
                     KeyCode::Char(x) => {
                         if x == 'c' && event.modifiers.contains(KeyModifiers::CONTROL) {
