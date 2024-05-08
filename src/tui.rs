@@ -52,7 +52,10 @@ pub fn kill_terminal() {
     let mut stdout = stdout();
 
     stdout.queue(Clear(ClearType::All)).unwrap();
+    stdout.queue(MoveTo(0, 0)).unwrap();
+    stdout.flush().unwrap();
     cook_terminal();
 
-    print!("{}", resource) 
+    print!("{}\n", resource); 
+    process::exit(0);
 }

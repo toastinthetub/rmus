@@ -9,10 +9,12 @@ use rodio::{Decoder, OutputStream, source::Source};
 use tui::{initialize_terminal, kill_terminal};
 use render::render;
 
+use tokio::{runtime, task};
+
 use crate::tui::event_loop;
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = args().collect();
 
     assert!(args.len() >= 2, "no file provided");
@@ -24,14 +26,7 @@ fn main() {
     let file = BufReader::new(File::open(filepath).unwrap());
     let mut stdout = initialize_terminal();
 
-
-    let handle = thread::spawn(move || {
-        stdout.queue(MoveTo(0, 0));
-        stdout.write("FUCKING SKILL ISSUE".as_bytes());
-        event_loop(stdout)
-    });
-
-    handle.join().unwrap();
+    let task = task::spawn(event_loop(stdout));
 
     let source = Decoder::new(file).unwrap();
     let duration = source.total_duration().unwrap();
