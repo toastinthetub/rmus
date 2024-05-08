@@ -26,7 +26,7 @@ async fn main() {
     let file = BufReader::new(File::open(filepath).unwrap());
     let mut stdout = initialize_terminal();
 
-    let task = task::spawn(event_loop(stdout));
+    task::spawn(event_loop(stdout));
 
     let source = Decoder::new(file).unwrap();
     let duration = source.total_duration().unwrap();

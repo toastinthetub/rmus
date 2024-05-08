@@ -3,10 +3,10 @@ use std::{io::{stdout, Stdout, Write}, process, time::Duration, thread, env};
 use futures::StreamExt;
 use crate::render;
 
-const resource: &str = include_str!("./resource.txt");
+const RESOURCE: &str = include_str!("./Resource/resource.txt");
 
 pub async fn event_loop(mut stdout: Stdout) {
-    render(&stdout);
+    render(&mut stdout);
     let mut reader = EventStream::new();
     loop {
         let event = reader.next().await.unwrap().unwrap();
@@ -48,7 +48,7 @@ pub fn cook_terminal() {
     let _ = terminal::disable_raw_mode();
 }
 
-pub fn kill_terminal() {
+pub fn kill_terminal() { 
     let mut stdout = stdout();
 
     stdout.queue(Clear(ClearType::All)).unwrap();
@@ -56,6 +56,6 @@ pub fn kill_terminal() {
     stdout.flush().unwrap();
     cook_terminal();
 
-    print!("{}\n", resource); 
+    print!("{}\n", RESOURCE); 
     process::exit(0);
 }
