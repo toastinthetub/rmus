@@ -1,20 +1,28 @@
 // hello seth
 mod tui;
 mod utils;
+mod render;
 
-use std::{any::Any, env::args, fs::File, path::Path, time::Duration};
-use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleRate, StreamConfig};
 use symphonia::core::{audio::{AudioBuffer, AudioBufferRef, Channels, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, errors::Error, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
+use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleRate, StreamConfig};
 
-fn main() {
+use std::{any::Any, env::args, fs::File, path::Path, time::Duration, thread::spawn};
+use std::{io::{self, stdin, stdout, Write}, process, string, sync::RwLock, thread};
+use std::sync::{Mutex, Arc};
+use std::process::exit;
+
+use tokio::{runtime, task};
+
+use crate::tui::event_loop;
+
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = args().collect();
 
     let filepath = Path::new(args.get(1).unwrap());
 
-    let stdout = tui::initialize_terminal();
-    tui::render(stdout);
-    std::thread::sleep(Duration::from_secs(2));
-    tui::kill_terminal();
+    let mut stdout = tui::initialize_terminal();
+    task::spawn(event_loop(stdout));
 
     // decoding makes me want to kill myself
     let src = File::open(filepath).unwrap();
