@@ -47,8 +47,10 @@ async fn main() {
 
     let track_id = track.id;
     let sample_rate = track.codec_params.sample_rate.unwrap();
+    let total_frames = track.codec_params.n_frames.unwrap();
 
     let mut samples: Vec<f32> = vec![];
+    let mut frame_count = 0;
 
     loop {
         let packet = match format.next_packet() {
@@ -78,9 +80,10 @@ async fn main() {
         for &sample in buffer.chan(0) {
             samples.push(sample);
         }
-    }
 
-    println!("{}", samples.len());
+        frame_count += decoded.frames();
+        print!("\rDecoding... {:.2}% ({} / {})", frame_count as f32 / total_frames as f32 * 100.0, frame_count, total_frames)
+    }
 
     // audio shit
     let host = cpal::default_host();
@@ -95,7 +98,6 @@ async fn main() {
     let err_fn = |err| eprintln!("{}", err);
     let config: StreamConfig = supported_config.into();
     let channels = config.channels;
-    println!("{}", config.sample_rate.0);
 
     let mut sample_head = 0;
 
@@ -110,7 +112,7 @@ async fn main() {
         }
     }, err_fn, None).unwrap();
 
-    println!("playing");
+    println!("Playing...");
 
     stream.play().unwrap();
 
