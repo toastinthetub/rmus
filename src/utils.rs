@@ -1,7 +1,7 @@
 use std::fs;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::{Path, PathBuf};
+use std::io;
+use std::path::Path;
+use std::path::PathBuf;
 
 pub struct SongMetadata {
     pub title: Option<String>,

@@ -1,12 +1,12 @@
-use crossterm::{cursor::MoveTo, event::{self, poll, read, Event, EventStream, KeyCode, KeyModifiers}, execute, terminal::{self, Clear, ClearType}, QueueableCommand};
-use std::{io::{stdout, Stdout, Write}, process};
+use crossterm::{cursor::MoveTo, terminal::{self, Clear, ClearType}, QueueableCommand};
+use std::io::{Stdout, Write};
 
 use crate::utils::get_artists_albums_songs;
 
 pub fn render(stdout: &mut Stdout) {
     let (w, h) = terminal::size().unwrap();
     let binder = "█".repeat(w as usize);
-    let bar = binder.as_bytes();
+    let _bar = binder.as_bytes();
 
     stdout.queue(Clear(ClearType::All)).unwrap();
     stdout.flush().unwrap();
@@ -18,7 +18,7 @@ pub fn render(stdout: &mut Stdout) {
     vertical_bar(stdout, "█".to_string(), w - w , 0, h);
     vertical_bar(stdout, "█".to_string(), w , 0, h);
 
-    let music_folder_path = std::path::Path::new("/home/fizbin/lair/snatch/music/");
+    let music_folder_path = std::path::Path::new("/home/mct32/Music"); 
     write_artists(stdout, || {
         get_artists_albums_songs(&music_folder_path).unwrap().0
     }, w, h);
@@ -27,7 +27,7 @@ pub fn render(stdout: &mut Stdout) {
     stdout.flush().unwrap();
 }
 
-pub fn write_artists<F>(stdout: &mut Stdout, artist_generator: F, w: u16, h: u16)
+pub fn write_artists<F>(stdout: &mut Stdout, artist_generator: F, w: u16, _h: u16)
 where
     F: Fn() -> Vec<String>,
 {

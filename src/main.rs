@@ -3,15 +3,11 @@ mod tui;
 mod utils;
 mod render;
 
-use symphonia::core::{audio::{AudioBuffer, AudioBufferRef, Channels, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, errors::Error, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
+use symphonia::core::{audio::{AudioBuffer, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, errors::Error, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleRate, StreamConfig};
+use std::{env::args, fs::File, path::Path, time::Duration};
 
-use std::{any::Any, env::args, fs::File, path::Path, time::Duration, thread::spawn};
-use std::{io::{self, stdin, stdout, Write}, process, string, sync::RwLock, thread};
-use std::sync::{Mutex, Arc};
-use std::process::exit;
-
-use tokio::{runtime, task};
+use tokio::task;
 
 use crate::tui::event_loop;
 
@@ -21,7 +17,7 @@ async fn main() {
 
     let filepath = Path::new(args.get(1).unwrap());
 
-    let mut stdout = tui::initialize_terminal();
+    let stdout = tui::initialize_terminal();
     task::spawn(event_loop(stdout));
 
     // decoding makes me want to kill myself

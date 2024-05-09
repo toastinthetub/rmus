@@ -1,5 +1,5 @@
-use crossterm::{cursor::MoveTo, event::{self, poll, read, Event, EventStream, KeyCode, KeyModifiers}, execute, terminal::{self, Clear, ClearType}, QueueableCommand};
-use std::{io::{stdout, Stdout, Write}, process, time::Duration, thread, env};
+use crossterm::{cursor::MoveTo, event::{Event, EventStream, KeyCode, KeyModifiers}, terminal::{self, Clear, ClearType}, QueueableCommand};
+use std::{io::{stdout, Stdout, Write}, process};
 use futures::StreamExt;
 use crate::render;
 
@@ -11,7 +11,7 @@ pub async fn event_loop(mut stdout: Stdout) {
     loop {
         let event = reader.next().await.unwrap().unwrap();
         match event {
-            Event::Resize(nw, nh) => {
+            Event::Resize(_nw, _nh) => {
                 render::render(&mut stdout)
             }
             Event::Key(event) => {
