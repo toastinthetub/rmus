@@ -2,9 +2,9 @@ use crossterm::{cursor::MoveTo, terminal::{self, Clear, ClearType}, QueueableCom
 use futures::lock::Mutex;
 use std::{io::{Stdout, Write}, sync::Arc};
 
-use crate::{utils::get_artists_albums_songs, AudioState};
+use crate::{utils::get_artists_albums_songs, AudioState, Config};
 
-pub async fn render(stdout: &mut Stdout, audio_state: Arc<Mutex<AudioState>>) {
+pub async fn render(stdout: &mut Stdout, audio_state: Arc<Mutex<AudioState>>, config: Config) {
     let (w, h) = terminal::size().unwrap();
     let binder = "█".repeat(w as usize);
     let _bar = binder.as_bytes();
@@ -19,7 +19,7 @@ pub async fn render(stdout: &mut Stdout, audio_state: Arc<Mutex<AudioState>>) {
     vertical_bar(stdout, "█".to_string(), w - w , 0, h);
     vertical_bar(stdout, "█".to_string(), w , 0, h);
 
-    let music_folder_path = std::path::Path::new("/home/mct32/Music"); 
+    let music_folder_path = std::path::Path::new(&config.library_path); 
     write_artists(stdout, || {
         get_artists_albums_songs(&music_folder_path).unwrap().0
     }, w, h);

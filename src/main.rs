@@ -4,9 +4,10 @@ mod utils;
 mod render;
 
 use futures::lock::Mutex;
-use symphonia::core::{audio::{AudioBuffer, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, errors::Error, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
+use serde::{Deserialize, Serialize};
+use symphonia::core::{audio::{AudioBuffer, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleRate, StreamConfig};
-use std::{env::args, fs::File, path::Path, sync::Arc, time::Duration};
+use std::{env::args, fs::File, io::ErrorKind, path::Path, sync::Arc, time::Duration};
 
 use tokio::task;
 
@@ -16,8 +17,44 @@ struct AudioState {
     status: String,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+struct Config {
+    library_path: String,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            library_path: ".".to_string(),
+        }
+    }
+}
+
+impl Config {
+    fn load() -> Self {
+        match File::open("config.json") {
+            Ok(file) => {
+                serde_json::from_reader(file).unwrap()
+            },
+            Err(err) => {
+                if err.kind() == ErrorKind::NotFound {
+                    // load default
+                    let config: Config = Default::default();
+                    let file = File::create("config.json").unwrap();
+                    serde_json::to_writer_pretty(file, &config).unwrap();
+                    config
+                } else {
+                    panic!("{}", err)
+                }
+            }
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    let config = Config::load();
+
     let args: Vec<String> = args().collect();
 
     let filepath = Path::new(args.get(1).unwrap());
@@ -27,7 +64,7 @@ async fn main() {
     }));
 
     let stdout = tui::initialize_terminal();
-    task::spawn(event_loop(stdout, audio_state.clone()));
+    task::spawn(event_loop(stdout, audio_state.clone(), config.clone()));
 
     // decoding makes me want to kill myself
     let src = File::open(filepath).unwrap();
@@ -64,7 +101,7 @@ async fn main() {
     loop {
         let packet = match format.next_packet() {
             Ok(packet) => packet,
-            Err(Error::ResetRequired) => {
+            Err(symphonia::core::errors::Error::ResetRequired) => {
                 unimplemented!()
             },
             Err(_) => {
