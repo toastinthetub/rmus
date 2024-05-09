@@ -3,13 +3,18 @@ mod tui;
 mod utils;
 mod render;
 
+use futures::lock::Mutex;
 use symphonia::core::{audio::{AudioBuffer, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, errors::Error, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleRate, StreamConfig};
-use std::{env::args, fs::File, path::Path, time::Duration};
+use std::{env::args, fs::File, path::Path, sync::Arc, time::Duration};
 
 use tokio::task;
 
 use crate::tui::event_loop;
+
+struct AudioState {
+    status: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -17,8 +22,12 @@ async fn main() {
 
     let filepath = Path::new(args.get(1).unwrap());
 
+    let audio_state = Arc::new(Mutex::new(AudioState {
+        status: "".to_string(),
+    }));
+
     let stdout = tui::initialize_terminal();
-    task::spawn(event_loop(stdout));
+    task::spawn(event_loop(stdout, audio_state.clone()));
 
     // decoding makes me want to kill myself
     let src = File::open(filepath).unwrap();
@@ -82,7 +91,7 @@ async fn main() {
         }
 
         frame_count += decoded.frames();
-        print!("\rDecoding... {:.2}% ({} / {})", frame_count as f32 / total_frames as f32 * 100.0, frame_count, total_frames)
+        set_status(format!("\rDecoding... {:.2}% ({} / {})", frame_count as f32 / total_frames as f32 * 100.0, frame_count, total_frames), audio_state.clone()).await;
     }
 
     // audio shit
@@ -112,9 +121,14 @@ async fn main() {
         }
     }, err_fn, None).unwrap();
 
-    println!("Playing...");
+    set_status("Playing".to_string(), audio_state.clone()).await;
 
     stream.play().unwrap();
 
     std::thread::sleep(Duration::from_secs(300))
+}
+
+async fn set_status(status: String, audio_state: Arc<Mutex<AudioState>>) {
+    let mut state = audio_state.lock().await;
+    state.status = status;
 }

@@ -1,9 +1,10 @@
 use crossterm::{cursor::MoveTo, terminal::{self, Clear, ClearType}, QueueableCommand};
-use std::io::{Stdout, Write};
+use futures::lock::Mutex;
+use std::{io::{Stdout, Write}, sync::Arc};
 
-use crate::utils::get_artists_albums_songs;
+use crate::{utils::get_artists_albums_songs, AudioState};
 
-pub fn render(stdout: &mut Stdout) {
+pub async fn render(stdout: &mut Stdout, audio_state: Arc<Mutex<AudioState>>) {
     let (w, h) = terminal::size().unwrap();
     let binder = "█".repeat(w as usize);
     let _bar = binder.as_bytes();
@@ -22,6 +23,11 @@ pub fn render(stdout: &mut Stdout) {
     write_artists(stdout, || {
         get_artists_albums_songs(&music_folder_path).unwrap().0
     }, w, h);
+
+    let state = audio_state.lock().await;
+    stdout.queue(MoveTo(0, h)).unwrap();
+    stdout.write_all(state.status.as_bytes()).unwrap();
+    drop(state);
     
     stdout.queue(MoveTo(w / 2, h / 2)).unwrap();
     stdout.flush().unwrap();

@@ -1,21 +1,21 @@
 use crossterm::{cursor::MoveTo, event::{Event, EventStream, KeyCode, KeyModifiers}, terminal::{self, Clear, ClearType}, QueueableCommand};
-use std::{io::{stdout, Stdout, Write}, process};
-use futures::StreamExt;
-use crate::render;
+use std::{io::{stdout, Stdout, Write}, process, sync::Arc};
+use futures::{lock::Mutex, StreamExt};
+use crate::{render, AudioState};
 
 const RESOURCE: &str = include_str!("./Resource/resource.txt");
 
-pub async fn event_loop(mut stdout: Stdout) {
-    render::render(&mut stdout);
+pub async fn event_loop(mut stdout: Stdout, audio_state: Arc<Mutex<AudioState>>) {
+    render::render(&mut stdout, audio_state.clone()).await;
     let mut reader = EventStream::new();
     loop {
         let event = reader.next().await.unwrap().unwrap();
         match event {
             Event::Resize(_nw, _nh) => {
-                render::render(&mut stdout)
+                render::render(&mut stdout, audio_state.clone()).await;
             }
             Event::Key(event) => {
-                render::render(&mut stdout);
+                render::render(&mut stdout, audio_state.clone()).await;
                 match event.code {
                     KeyCode::Char(x) => {
                         if x == 'c' && event.modifiers.contains(KeyModifiers::CONTROL) {
@@ -28,7 +28,10 @@ pub async fn event_loop(mut stdout: Stdout) {
                 }
             }
             _ => {
-                
+                // hey sam, ill prob make a better solution for this but for now im gonna constantly render frames so i can print a live status.
+                // p.s. i also made render
+                // this only renders when an event fires tho, but i need it not to be blocked. maybe u can poll events instead of next()?
+                render::render(&mut stdout, audio_state.clone()).await
             }
         }
     }
