@@ -1,5 +1,5 @@
 use crossterm::{cursor::MoveTo, event::{Event, EventStream, KeyCode, KeyModifiers}, terminal::{self, Clear, ClearType}, QueueableCommand};
-use std::{io::{stdout, Stdout, Write}, process, sync::Arc};
+use std::{io::{stdout, Stdout, Write}, process, sync::Arc, thread::sleep, time::Duration};
 use futures::{lock::Mutex, StreamExt};
 use crate::{render, AudioState, Config};
 
@@ -34,6 +34,14 @@ pub async fn event_loop(mut stdout: Stdout, audio_state: Arc<Mutex<AudioState>>,
                 render::render(&mut stdout, audio_state.clone(), config.clone()).await
             }
         }
+    }
+}
+
+pub async fn render_loop(audio_state: Arc<Mutex<AudioState>>, config: Config) {
+    let mut stdout = stdout();
+    loop {
+        render::render(&mut stdout, audio_state.clone(), config.clone()).await;
+        sleep(Duration::from_millis(33));
     }
 }
 

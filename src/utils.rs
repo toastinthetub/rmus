@@ -42,7 +42,7 @@ pub fn find_music_files(dir: &Path) -> Result<Vec<SongMetadata>, io::Error> {
     }
 
     Ok(music_files)
-}
+} 
 
 pub fn get_artists_albums_songs(dir: &Path) -> Result<(Vec<String>, Vec<String>, Vec<String>), io::Error> {
     let mut artists = Vec::new();

@@ -15,7 +15,7 @@ impl Default for Config {
     }
 }
 
-impl Config {
+impl Config { 
     pub fn load() -> Self {
         match File::open("config.toml") {
             Ok(mut file) => {

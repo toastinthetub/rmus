@@ -12,7 +12,7 @@ use std::{env::args, fs::File, path::Path, sync::Arc, time::Duration};
 
 use tokio::task;
 
-use tui::event_loop;
+use tui::{event_loop, render_loop};
 use config::Config;
 use state::{set_status, AudioState};
 
@@ -30,6 +30,7 @@ async fn main() {
 
     let stdout = tui::initialize_terminal();
     task::spawn(event_loop(stdout, audio_state.clone(), config.clone()));
+    task::spawn(render_loop(audio_state.clone(), config.clone()));
 
     // decoding makes me want to kill myself
     let src = File::open(filepath).unwrap();
