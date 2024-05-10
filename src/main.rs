@@ -2,56 +2,20 @@
 mod tui;
 mod utils;
 mod render;
+mod config;
 
 use futures::lock::Mutex;
-use serde::{Deserialize, Serialize};
 use symphonia::core::{audio::{AudioBuffer, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleRate, StreamConfig};
-use std::{env::args, fs::File, io::{ErrorKind, Read, Write}, path::Path, sync::Arc, time::Duration};
+use std::{env::args, fs::File, path::Path, sync::Arc, time::Duration};
 
 use tokio::task;
 
 use crate::tui::event_loop;
+use crate::config::Config;
 
 struct AudioState {
     status: String,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-struct Config {
-    library_path: String,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            library_path: ".".to_string(),
-        }
-    }
-}
-
-impl Config {
-    fn load() -> Self {
-        match File::open("config.toml") {
-            Ok(mut file) => {
-                let mut buf = String::new();
-                file.read_to_string(&mut buf).unwrap();
-                toml::from_str(buf.as_str()).unwrap()
-            },
-            Err(err) => {
-                if err.kind() == ErrorKind::NotFound {
-                    // load default
-                    let config: Config = Default::default();
-                    let mut file = File::create("config.toml").unwrap();
-                    let buf = toml::to_string_pretty(&config).unwrap();
-                    file.write_all(buf.as_bytes()).unwrap();
-                    config
-                } else {
-                    panic!("{}", err)
-                }
-            }
-        }
-    }
 }
 
 #[tokio::main]
