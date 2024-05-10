@@ -61,7 +61,7 @@ async fn main() {
     let sample_rate = track.codec_params.sample_rate.unwrap();
     let total_frames = track.codec_params.n_frames.unwrap();
 
-    let mut samples: Vec<f32> = vec![];
+    let mut samples: (Vec<f32>, Vec<f32>) = (vec![], vec![]);
     let mut frame_count = 0;
 
     loop {
@@ -89,8 +89,14 @@ async fn main() {
 
         decoded.convert(&mut buffer);
 
+        // left
         for &sample in buffer.chan(0) {
-            samples.push(sample);
+            samples.0.push(sample);
+        }
+
+        // right
+        for &sample in buffer.chan(1) {
+            samples.1.push(sample);
         }
 
         frame_count += decoded.frames();
@@ -101,8 +107,8 @@ async fn main() {
     let host = cpal::default_host();
     let device = host.default_output_device().unwrap();
 
-    let mut supported_configs_range = device.supported_output_configs().unwrap();
-    let supported_config = supported_configs_range.next().unwrap()
+    let supported_configs_range = device.supported_output_configs().unwrap();
+    let supported_config = supported_configs_range.filter(|x| x.channels() == 2).next().unwrap()
         .with_sample_rate(SampleRate {
             0: sample_rate
         });
@@ -115,9 +121,18 @@ async fn main() {
 
     let stream = device.build_output_stream(&config, move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
         for frame in data.chunks_mut(channels as usize) {
-            let value = samples.get(sample_head).unwrap();
-            for sample in frame.iter_mut() {
-                *sample = *value;
+            for (channel, sample) in frame.iter_mut().enumerate() {
+                match channel {
+                    0 => {
+                        *sample = *samples.0.get(sample_head).unwrap();
+                    },
+                    1 => {
+                        *sample = *samples.1.get(sample_head).unwrap();
+                    },
+                    _ => {
+                        unimplemented!()
+                    }
+                }
             }
 
             sample_head += 1;
