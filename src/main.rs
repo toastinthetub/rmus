@@ -3,6 +3,7 @@ mod tui;
 mod utils;
 mod render;
 mod config;
+mod state;
 
 use futures::lock::Mutex;
 use symphonia::core::{audio::{AudioBuffer, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
@@ -11,12 +12,9 @@ use std::{env::args, fs::File, path::Path, sync::Arc, time::Duration};
 
 use tokio::task;
 
-use crate::tui::event_loop;
-use crate::config::Config;
-
-struct AudioState {
-    status: String,
-}
+use tui::event_loop;
+use config::Config;
+use state::{set_status, AudioState};
 
 #[tokio::main]
 async fn main() {
@@ -130,9 +128,4 @@ async fn main() {
     stream.play().unwrap();
 
     std::thread::sleep(Duration::from_secs(300))
-}
-
-async fn set_status(status: String, audio_state: Arc<Mutex<AudioState>>) {
-    let mut state = audio_state.lock().await;
-    state.status = status;
 }
