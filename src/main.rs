@@ -7,7 +7,7 @@ use futures::lock::Mutex;
 use serde::{Deserialize, Serialize};
 use symphonia::core::{audio::{AudioBuffer, Signal}, codecs::{DecoderOptions, CODEC_TYPE_NULL}, formats::FormatOptions, io::MediaSourceStream, meta::MetadataOptions, probe::Hint};
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleRate, StreamConfig};
-use std::{env::args, fs::File, io::ErrorKind, path::Path, sync::Arc, time::Duration};
+use std::{env::args, fs::File, io::{ErrorKind, Read, Write}, path::Path, sync::Arc, time::Duration};
 
 use tokio::task;
 
@@ -32,16 +32,19 @@ impl Default for Config {
 
 impl Config {
     fn load() -> Self {
-        match File::open("config.json") {
-            Ok(file) => {
-                serde_json::from_reader(file).unwrap()
+        match File::open("config.toml") {
+            Ok(mut file) => {
+                let mut buf = String::new();
+                file.read_to_string(&mut buf).unwrap();
+                toml::from_str(buf.as_str()).unwrap()
             },
             Err(err) => {
                 if err.kind() == ErrorKind::NotFound {
                     // load default
                     let config: Config = Default::default();
-                    let file = File::create("config.json").unwrap();
-                    serde_json::to_writer_pretty(file, &config).unwrap();
+                    let mut file = File::create("config.toml").unwrap();
+                    let buf = toml::to_string_pretty(&config).unwrap();
+                    file.write_all(buf.as_bytes()).unwrap();
                     config
                 } else {
                     panic!("{}", err)
