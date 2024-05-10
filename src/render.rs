@@ -1,4 +1,4 @@
-use crossterm::{cursor::MoveTo, terminal::{self, Clear, ClearType}, QueueableCommand};
+use crossterm::{cursor::MoveTo, style::{Color, ResetColor, SetBackgroundColor, SetForegroundColor, Stylize}, terminal::{self, Clear, ClearType}, QueueableCommand};
 use futures::lock::Mutex;
 use std::{io::{Stdout, Write}, sync::Arc};
 
@@ -25,11 +25,21 @@ pub async fn render(stdout: &mut Stdout, audio_state: Arc<Mutex<AudioState>>, co
     }, w, h);
 
     let state = audio_state.lock().await;
-    stdout.queue(MoveTo(0, h)).unwrap();
-    stdout.write_all(state.status.as_bytes()).unwrap();
+
+    write_colored(stdout, Color::Black, Color::White, state.status.clone(), (0, h));
+    // stdout.queue(MoveTo(0, h)).unwrap();
+    // stdout.write_all(state.status.as_bytes()).unwrap();
     drop(state);
     
     stdout.queue(MoveTo(w / 2, h / 2)).unwrap();
+    stdout.flush().unwrap();
+}
+
+fn write_colored(stdout: &mut Stdout, foreground: Color, background: Color, message: String, (x, y): (u16, u16)) {
+    let styled = format!("{}", message).bold().black().on_white();
+
+    stdout.queue(MoveTo(x, y)).unwrap();
+    print!("{}", styled);
     stdout.flush().unwrap();
 }
 
@@ -49,22 +59,24 @@ where
 
 
 pub fn vertical_bar(mut stdout: &Stdout, char: String,  x: u16, start_y: u16, end_y: u16) {
+    let styled = char.white();
     let bar_height = end_y - start_y;
 
     stdout.queue(MoveTo(x, start_y)).unwrap();
     stdout.flush().unwrap();
     for cell in 0..=bar_height {
-        stdout.write(char.as_bytes()).unwrap();
+        print!("{}", styled);
         stdout.queue(MoveTo(x, cell)).unwrap();
         stdout.flush().unwrap();
     }
 }
 
 pub fn horizontal_bar(mut stdout: &Stdout, char: String, x: u16, y: u16, length: u16) {
+    let styled = char.white();
     stdout.queue(MoveTo(x, y)).unwrap();
     stdout.flush().unwrap();
     for cell in 0..=length {
-        stdout.write(char.as_bytes()).unwrap();
+        print!("{}", styled);
         stdout.queue(MoveTo(cell, y)).unwrap();
         stdout.flush().unwrap();
     }
